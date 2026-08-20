@@ -1,6 +1,4 @@
 import {
-  AdditiveBlending,
-  BackSide,
   Color,
   FrontSide,
   Mesh,
@@ -10,11 +8,7 @@ import {
 } from 'three'
 import type { AudioData } from '@/audio'
 import { disposeObject3D } from '../dispose'
-import {
-  glassOrbFragmentShader,
-  glassOrbGlowFragmentShader,
-  glassOrbVertexShader,
-} from '../shaders/glassOrb'
+import { glassOrbFragmentShader, glassOrbVertexShader } from '../shaders/glassOrb'
 import type {
   ControlDefinition,
   EffectDefinition,
@@ -144,9 +138,7 @@ export class GlassOrb implements VisualEffect {
   private readonly coreColor = new Color('#c4b5fd')
   private readonly highlightColor = new Color('#fbcfe8')
   private mesh: Mesh<SphereGeometry, ShaderMaterial> | null = null
-  private glow: Mesh<SphereGeometry, ShaderMaterial> | null = null
   private material: ShaderMaterial | null = null
-  private glowMaterial: ShaderMaterial | null = null
   private elapsed = 0
   private appliedRim = ''
   private appliedCore = ''
@@ -177,27 +169,10 @@ export class GlassOrb implements VisualEffect {
       side: FrontSide,
     })
 
-    const glowMaterial = new ShaderMaterial({
-      uniforms,
-      vertexShader: glassOrbVertexShader,
-      fragmentShader: glassOrbGlowFragmentShader,
-      transparent: true,
-      depthWrite: false,
-      side: BackSide,
-      blending: AdditiveBlending,
-    })
-
     const mesh = new Mesh(new SphereGeometry(1, 96, 96), material)
-    const glow = new Mesh(new SphereGeometry(1, 48, 48), glowMaterial)
-    glow.scale.setScalar(1.07)
-    glowMaterial.uniforms = material.uniforms
-
-    this.scene.add(glow)
     this.scene.add(mesh)
     this.mesh = mesh
-    this.glow = glow
     this.material = material
-    this.glowMaterial = glowMaterial
     this.elapsed = 0
     this.appliedRim = ''
     this.appliedCore = ''
@@ -229,11 +204,7 @@ export class GlassOrb implements VisualEffect {
 
     const audioScale = 1 + volume * volumeSensitivity * 0.08
     mesh.scale.setScalar(audioScale)
-    mesh.rotation.y += deltaTime * 0.00008 * idleSpeed
-    if (this.glow) {
-      this.glow.scale.setScalar(audioScale * 1.07)
-      this.glow.rotation.copy(mesh.rotation)
-    }
+    mesh.rotation.y += deltaTime * 0.0001 * idleSpeed
 
     uniforms.uTime.value = this.elapsed
     uniforms.uVolume.value = volume
@@ -267,9 +238,7 @@ export class GlassOrb implements VisualEffect {
     disposeObject3D(this.scene)
     this.scene.clear()
     this.mesh = null
-    this.glow = null
     this.material = null
-    this.glowMaterial = null
   }
 
   getDebugUniforms(): GlassOrbDebugUniforms {

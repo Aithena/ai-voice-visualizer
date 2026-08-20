@@ -26,9 +26,12 @@ float vnoise(vec3 x) {
 
 float fbm(vec3 p) {
   float sum = 0.0;
-  float amp = 0.55;
+  float amp = 0.5;
   sum += vnoise(p) * amp;
-  p = p * 2.03 + 17.2;
+  p = p * 2.07 + 13.7;
+  amp *= 0.5;
+  sum += vnoise(p) * amp;
+  p = p * 2.11 + 8.3;
   amp *= 0.5;
   sum += vnoise(p) * amp;
   return sum;
@@ -40,7 +43,6 @@ uniform float uTime;
 
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
-varying vec3 vViewPosition;
 
 void main() {
   float deform = sin(uTime * 0.5 + position.y * 2.0) * 0.015;
@@ -50,9 +52,7 @@ void main() {
   vWorldPosition = worldPosition.xyz;
   vNormal = normalize(mat3(modelMatrix) * normal);
 
-  vec4 mvPosition = viewMatrix * worldPosition;
-  vViewPosition = -mvPosition.xyz;
-  gl_Position = projectionMatrix * mvPosition;
+  gl_Position = projectionMatrix * viewMatrix * worldPosition;
 }
 `
 
@@ -75,67 +75,40 @@ uniform float uOpacity;
 
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
-varying vec3 vViewPosition;
 
 void main() {
   vec3 N = normalize(vNormal);
   vec3 V = normalize(cameraPosition - vWorldPosition);
   float ndotv = max(dot(N, V), 0.0);
+  float fresnel = pow(1.0 - ndotv, mix(2.4, 1.1, clamp((uRimWidth - 0.2) / 1.3, 0.0, 1.0)));
 
-  float rimPower = mix(3.6, 1.25, clamp((uRimWidth - 0.2) / 1.3, 0.0, 1.0));
-  float fresnel = pow(1.0 - ndotv, rimPower);
+  float polar = N.y + (uPitch - 0.5) * 0.16;
+  float top = smoothstep(-0.2, 0.75, polar);
 
-  float polar = N.y + (uPitch - 0.5) * 0.18;
-  float top = smoothstep(-0.05, 0.82, polar);
+  vec3 magenta = mix(uRimColor, vec3(1.0, 0.22, 0.62), 0.22 + uTreble * 0.2);
+  vec3 indigo = mix(vec3(0.32, 0.24, 0.72), uCoreColor, 0.18);
+  vec3 rimHue = mix(magenta, indigo, top);
 
-  vec3 whiteCore = mix(vec3(1.0, 0.98, 0.992), uCoreColor, 0.04);
-  vec3 indigo = vec3(0.14, 0.16, 0.52);
-  vec3 magenta = mix(uRimColor, vec3(1.0, 0.28, 0.68), 0.22 + uTreble * 0.2);
-  vec3 rimHue = mix(magenta, indigo, smoothstep(0.2, 0.88, top));
+  vec3 p = N * 2.0 + vec3(uTime * 0.12);
+  float cloud = fbm(p + fbm(p * 1.6) * uRefractionIntensity);
+  float mist = smoothstep(0.28, 0.78, cloud);
 
-  vec3 swirlPos = vWorldPosition * 1.85 + vec3(uTime * 0.12, uTime * 0.07, -uTime * 0.05);
-  float cloud = fbm(swirlPos);
-  float mist = (cloud - 0.42) * uRefractionIntensity;
-  float speech = uSpeechActivity * uHighlightStrength;
-  float flow = mist * (0.4 + speech * 0.85);
+  vec3 core = mix(vec3(0.99, 0.95, 0.98), uCoreColor, 0.08);
+  core = mix(core, uHighlightColor, 0.1 + uVolume * 0.06);
 
-  vec3 interior = mix(whiteCore, uHighlightColor, 0.04 + max(flow, 0.0) * 0.22 + uVolume * 0.04);
-  interior = mix(interior, indigo, top * 0.08 * (1.0 - fresnel));
+  vec3 L = normalize(vec3(-0.35, 0.45, 0.82));
+  float fill = pow(max(dot(N, L), 0.0), 1.4);
+  core = mix(core, vec3(1.0), fill * 0.16 * uHighlightStrength);
 
-  float band = exp(-pow(polar - 0.12, 2.0) * 7.0);
-  interior += uHighlightColor * band * speech * 0.18;
+  float shell = clamp(fresnel * (1.05 + uBass * 0.15) + mist * fresnel * 0.35, 0.0, 1.0);
+  vec3 color = mix(core, rimHue, shell);
+  color += rimHue * fresnel * 0.28;
+  color += uHighlightColor * uSpeechActivity * fresnel * 0.2;
 
-  float rimMix = clamp(fresnel * (1.28 + uBass * 0.18), 0.0, 1.0);
-  vec3 color = mix(interior, rimHue, rimMix);
+  float spec = pow(max(dot(N, normalize(L + V)), 0.0), 48.0) * uHighlightStrength * 0.28;
+  color += vec3(1.0) * spec;
 
-  float innerRing = smoothstep(0.12, 0.4, 1.0 - ndotv) * (1.0 - smoothstep(0.55, 0.92, 1.0 - ndotv));
-  float crescent = innerRing * smoothstep(0.28, 0.9, polar);
-  color = mix(color, indigo * 0.85, crescent * 0.9);
-
-  float alpha = uOpacity * mix(0.5, 0.97, clamp(fresnel * 1.05, 0.0, 1.0));
+  float alpha = uOpacity * mix(0.72, 0.96, clamp(fresnel + 0.2, 0.0, 1.0));
   gl_FragColor = vec4(color, alpha);
-}
-`
-
-export const glassOrbGlowFragmentShader = /* glsl */ `
-uniform vec3 uRimColor;
-uniform float uOpacity;
-uniform float uRimWidth;
-
-varying vec3 vNormal;
-varying vec3 vWorldPosition;
-
-void main() {
-  vec3 N = normalize(vNormal);
-  vec3 V = normalize(cameraPosition - vWorldPosition);
-  float ndotv = max(dot(N, V), 0.0);
-  float width = mix(3.4, 1.6, clamp((uRimWidth - 0.2) / 1.3, 0.0, 1.0));
-  float halo = pow(1.0 - ndotv, width);
-  halo = smoothstep(0.45, 0.98, halo);
-  float polar = normalize(vNormal).y;
-  vec3 pink = mix(uRimColor, vec3(1.0, 0.78, 0.88), 0.7);
-  vec3 indigo = vec3(0.35, 0.32, 0.7);
-  vec3 tint = mix(pink, indigo, smoothstep(0.15, 0.8, polar));
-  gl_FragColor = vec4(tint, halo * 0.1 * uOpacity);
 }
 `
