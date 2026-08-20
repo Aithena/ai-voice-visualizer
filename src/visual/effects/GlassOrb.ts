@@ -1,14 +1,20 @@
 import {
+  AdditiveBlending,
+  BackSide,
   Color,
-  DoubleSide,
-  IcosahedronGeometry,
+  FrontSide,
   Mesh,
   Scene,
   ShaderMaterial,
+  SphereGeometry,
 } from 'three'
 import type { AudioData } from '@/audio'
 import { disposeObject3D } from '../dispose'
-import { glassOrbFragmentShader, glassOrbVertexShader } from '../shaders/glassOrb'
+import {
+  glassOrbFragmentShader,
+  glassOrbGlowFragmentShader,
+  glassOrbVertexShader,
+} from '../shaders/glassOrb'
 import type {
   ControlDefinition,
   EffectDefinition,
@@ -137,41 +143,61 @@ export class GlassOrb implements VisualEffect {
   private readonly rimColor = new Color('#d946ef')
   private readonly coreColor = new Color('#c4b5fd')
   private readonly highlightColor = new Color('#fbcfe8')
-  private mesh: Mesh<IcosahedronGeometry, ShaderMaterial> | null = null
+  private mesh: Mesh<SphereGeometry, ShaderMaterial> | null = null
+  private glow: Mesh<SphereGeometry, ShaderMaterial> | null = null
   private material: ShaderMaterial | null = null
+  private glowMaterial: ShaderMaterial | null = null
   private elapsed = 0
   private appliedRim = ''
   private appliedCore = ''
 
   init(_context: VisualEffectContext): void {
-    const geometry = new IcosahedronGeometry(1, 5)
+    const uniforms = {
+      uTime: { value: 0 },
+      uVolume: { value: 0 },
+      uBass: { value: 0 },
+      uTreble: { value: 0 },
+      uPitch: { value: 0 },
+      uSpeechActivity: { value: 0 },
+      uRimColor: { value: this.rimColor.clone() },
+      uCoreColor: { value: this.coreColor.clone() },
+      uHighlightColor: { value: this.highlightColor.clone() },
+      uRimWidth: { value: 0.55 },
+      uHighlightStrength: { value: 1 },
+      uRefractionIntensity: { value: 0.35 },
+      uOpacity: { value: 0.85 },
+    }
+
     const material = new ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uVolume: { value: 0 },
-        uBass: { value: 0 },
-        uTreble: { value: 0 },
-        uPitch: { value: 0 },
-        uSpeechActivity: { value: 0 },
-        uRimColor: { value: this.rimColor.clone() },
-        uCoreColor: { value: this.coreColor.clone() },
-        uHighlightColor: { value: this.highlightColor.clone() },
-        uRimWidth: { value: 0.55 },
-        uHighlightStrength: { value: 1 },
-        uRefractionIntensity: { value: 0.35 },
-        uOpacity: { value: 0.85 },
-      },
+      uniforms,
       vertexShader: glassOrbVertexShader,
       fragmentShader: glassOrbFragmentShader,
       transparent: true,
       depthWrite: false,
-      side: DoubleSide,
+      side: FrontSide,
     })
 
-    const mesh = new Mesh(geometry, material)
+    const glowMaterial = new ShaderMaterial({
+      uniforms,
+      vertexShader: glassOrbVertexShader,
+      fragmentShader: glassOrbGlowFragmentShader,
+      transparent: true,
+      depthWrite: false,
+      side: BackSide,
+      blending: AdditiveBlending,
+    })
+
+    const mesh = new Mesh(new SphereGeometry(1, 96, 96), material)
+    const glow = new Mesh(new SphereGeometry(1, 48, 48), glowMaterial)
+    glow.scale.setScalar(1.07)
+    glowMaterial.uniforms = material.uniforms
+
+    this.scene.add(glow)
     this.scene.add(mesh)
     this.mesh = mesh
+    this.glow = glow
     this.material = material
+    this.glowMaterial = glowMaterial
     this.elapsed = 0
     this.appliedRim = ''
     this.appliedCore = ''
@@ -202,8 +228,12 @@ export class GlassOrb implements VisualEffect {
     this.elapsed += deltaTime * 0.001 * idleSpeed
 
     const audioScale = 1 + volume * volumeSensitivity * 0.08
-    mesh.scale.set(audioScale, audioScale, audioScale)
-    mesh.rotation.y += deltaTime * 0.00012 * idleSpeed
+    mesh.scale.setScalar(audioScale)
+    mesh.rotation.y += deltaTime * 0.00008 * idleSpeed
+    if (this.glow) {
+      this.glow.scale.setScalar(audioScale * 1.07)
+      this.glow.rotation.copy(mesh.rotation)
+    }
 
     uniforms.uTime.value = this.elapsed
     uniforms.uVolume.value = volume
@@ -237,7 +267,9 @@ export class GlassOrb implements VisualEffect {
     disposeObject3D(this.scene)
     this.scene.clear()
     this.mesh = null
+    this.glow = null
     this.material = null
+    this.glowMaterial = null
   }
 
   getDebugUniforms(): GlassOrbDebugUniforms {

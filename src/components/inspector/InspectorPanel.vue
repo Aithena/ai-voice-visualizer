@@ -94,7 +94,7 @@ function onSelectChange(key: string, value: string | number | boolean | undefine
             :max="control.max ?? 1"
             :step="control.step ?? 0.01"
             :show-tooltip="false"
-            @change="(value) => onSliderChange(control.key, value)"
+            @update:model-value="(value) => onSliderChange(control.key, value)"
           />
 
           <ElColorPicker
@@ -102,14 +102,14 @@ function onSelectChange(key: string, value: string | number | boolean | undefine
             :id="`control-${control.key}`"
             :model-value="String(settings[control.key] ?? control.defaultValue)"
             size="small"
-            @change="(value) => onColorChange(control.key, value)"
+            @update:model-value="(value) => onColorChange(control.key, value)"
           />
 
           <ElSwitch
             v-else-if="control.type === 'switch'"
             :id="`control-${control.key}`"
             :model-value="Boolean(settings[control.key])"
-            @change="(value) => onSwitchChange(control.key, value)"
+            @update:model-value="(value) => onSwitchChange(control.key, value)"
           />
 
           <ElSelect
@@ -117,7 +117,7 @@ function onSelectChange(key: string, value: string | number | boolean | undefine
             :id="`control-${control.key}`"
             :model-value="String(settings[control.key] ?? control.defaultValue)"
             size="small"
-            @change="(value) => onSelectChange(control.key, value)"
+            @update:model-value="(value) => onSelectChange(control.key, value)"
           >
             <ElOption
               v-for="option in control.options"

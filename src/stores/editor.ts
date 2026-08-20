@@ -43,7 +43,7 @@ export const useEditorStore = defineStore('editor', () => {
     if (!definition || !definition.controls.some((control) => control.key === key)) {
       return
     }
-    settings.value[key] = value
+    settings.value = { ...settings.value, [key]: value }
   }
 
   function resetEffectSettings(): void {

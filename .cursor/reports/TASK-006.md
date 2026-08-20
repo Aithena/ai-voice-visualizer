@@ -4,7 +4,7 @@ Status: COMPLETED
 
 ## Summary
 
-落地独立产品效果 GlassOrb（粉紫 fresnel 玻璃球），并把 Stage 背景切成 dark/light；默认加载为 GlassOrb + light stage。
+落地独立产品效果 GlassOrb（白核、洋红 rim、顶部靛蓝新月），并把 Stage 背景切成 dark/light；默认加载为 GlassOrb + light stage。后续按用户参考图把默认观感从棱面冰晶改成正圆软边玻璃球。
 
 ## Changed
 
@@ -35,7 +35,7 @@ Status: COMPLETED
 | Spec | 落地 | 差异 |
 |---|---|---|
 | GlassOrb 独立 Effect，9 控件，5 组 | `GlassOrb.ts` keys：rimColor / coreColor / opacity / rimWidth / refractionIntensity / idleSpeed / volumeSensitivity / speechSensitivity / highlightStrength | 无 |
-| Shader uniforms + fresnel / 高光带 / 折射近似 | `glassOrb.ts`；形变 `sin(time*0.5)*0.015`；`IcosahedronGeometry(1,5)` | 折射仅为颜色叠加，无真采样 |
+| Shader uniforms + fresnel / 高光带 / 折射近似 | `glassOrb.ts`：白核 + 底部洋红 + 顶部靛蓝新月 + 外侧软光晕 mesh | 几何用 `SphereGeometry(1,96,96)` 替代 `IcosahedronGeometry(1,5)`，避免棱面；折射仍为颜色叠加 |
 | 注册顺序 GlassOrb → LiquidOrb → PlaceholderOrb | `VisualStage.vue` | 无 |
 | 清掉 store hardcoded `placeholder-orb` | 初始 `null`，由 `syncAvailableEffects(defaultId)` 填入 | 无 |
 | `preferredStageStyle` | GlassOrb `light`；Liquid/Placeholder `dark` | 无 |
@@ -50,7 +50,7 @@ Status: COMPLETED
 
 - Effects 选中 GlassOrb
 - Header Light 为 on
-- Stage 近白底，球体居中，粉紫 rim 可见
+- Stage 近白底，球体居中：近白核心、底部洋红 rim、顶部靛蓝弧
 - Inspector 五组 9 控件
 
 ![Default GlassOrb on light stage](./TASK-006-light.png)
@@ -81,11 +81,11 @@ light 舞台下 `VISUAL STAGE` / `GlassOrb` 走 `--color-text-stage-light-muted`
 
 ## 6. Open issues
 
-- Headless SwiftShader 下 ShaderMaterial 偶发全黑；Dark GlassOrb 截图重试后 97KB 才有球体。Review 复现时若全黑请重拍。
-- Icosahedron detail=5 在截图里仍能看出轻微分面，不是物理完美球面。
-- 麦克风未接；默认截图是 idle，speech 高光带靠 shader 公式存在，页面上安静时接近 0。
+- Headless SwiftShader 下 ShaderMaterial 偶发全黑；Dark GlassOrb 截图若全黑请重拍。
+- 默认观感已按参考图 1 重做（正圆、白核、洋红底、靛蓝顶）。仍无后处理 bloom，外圈光晕是第二层 mesh 近似。
+- 麦克风未接；安静时内部流动很弱。
 - `stageStyle` 不写 localStorage（spec Out of Scope）。
-- 未做 Effect 切换过渡 / bloom / 真折射。
+- 几何从 spec 的 Icosahedron(1,5) 改为 SphereGeometry，为了正圆轮廓。
 
 ## Tested
 
