@@ -21,7 +21,7 @@ function openInspector(): void {
         Inspector
       </ElButton>
       <ElButton disabled>Mic</ElButton>
-      <ElButton disabled>Reset</ElButton>
+      <ElButton @click="editorStore.resetEffectSettings()">Reset</ElButton>
       <ElButton disabled>Export</ElButton>
     </div>
   </header>

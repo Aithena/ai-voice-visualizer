@@ -515,159 +515,73 @@ Review 文件只读：`.codex/reviews/TASK-XXX-review.md`。Cursor 修代码，�
 
 ## 13. 完成任务后的报告
 
-每次完成当前 Task、测试、或根据 Codex Review 完成修复后，Cursor 必须生成结构化最终报告。
+用户不必把报告复制给 WorkBuddy。交接物是仓库里的文件，不是聊天里的长文本。
 
-报告必须同时满足：
-
-1. 完整报告写入对应的 Markdown 文件（如果当前 Task 有对应文档要求）。
-2. 在当前 Cursor 对话中输出一份简洁、独立、可直接复制的报告摘要。
-3. 报告摘要必须放在当前回复的最后。
-4. 报告之后不得继续输出额外解释、建议、新 Task 或无关日志。
-5. 报告必须使用固定格式，方便用户快速定位并复制。
-6. 不要在最终报告中混入大量过程日志、工具输出或无关分析。
-
-### 13.1 Copy-Friendly Report Block
-
-最终回复必须包含以下固定结构：
+### 13.1 交接方式
 
 ```text
-========== TASK REPORT ==========
+Cursor 写完
+  → 写入 .cursor/reports/TASK-XXX.md
+  → 对话里用几句话说明结果
+  → 停止
 
-Task:
-TASK-XXX
+用户对 WorkBuddy 只说：
+  Review TASK-XXX
 
-Status:
-COMPLETED / CHANGES_REQUIRED / BLOCKED
+WorkBuddy 自己读：
+  .cursor/reports/TASK-XXX.md
+  .codex/tasks/TASK-XXX.md
+  git / 源码 / 验证
+  → 写入 .codex/reviews/TASK-XXX-review.md
+  → 更新 .codex/STATUS.md
+```
 
-Summary:
-一句话说明本次完成了什么。
+不要再要求用户复制完整报告到另一侧对话。WorkBuddy 不得猜测 Cursor 已完成，但仍只需用户一句 `Review TASK-XXX`。
 
-Changed:
+### 13.2 报告文件
+
+路径固定：
+
+```text
+.cursor/reports/TASK-XXX.md
+```
+
+若是按 Review 返工，更新同一文件，可追加 `## Fix round`。不要把完整报告贴进聊天。
+
+文件结构：
+
+```text
+# TASK-XXX Report
+
+Status: COMPLETED | CHANGES_REQUIRED | BLOCKED
+
+## Summary
+一句话。
+
+## Changed
 - ...
 
-Added:
+## Added
 - ...
 
-Removed:
-- ...
-
-Tested:
-- ...
-
-Issues:
+## Removed
 - None
-或
+
+## Tested
 - ...
 
-Next:
-等待 Codex Review
+## Issues
+- None
 
-==================================
+## Next
+等待 WorkBuddy Review
 ```
 
-### Copy-Friendly Rule
+规则：只写实际改动和实际跑过的验证。按 Review 修复时额外写 Review 文件名、FIXED / PARTIALLY_FIXED / BLOCKED、修了哪些、哪些未修。Cursor 不修改 `.codex/reviews/` 原文。
 
-`TASK REPORT` 必须作为当前回复中最后一个独立内容块。
+### 13.3 对话里怎么说
 
-用户应该能够在 Cursor 对话中快速定位最后一个 `TASK REPORT`，并使用 Cursor 的复制功能一次性复制完整报告。
-
-不要在 `TASK REPORT` 后继续输出：
-
-- 额外解释
-- 下一步推测
-- 新 Task
-- 无关日志
-- 其他 Markdown 内容
-
-### Report Content Rules
-
-报告必须准确反映本次 Task 的实际结果。
-
-- `Changed`：列出实际修改的文件或模块。
-- `Added`：列出实际新增的文件或功能。
-- `Removed`：列出实际删除的文件或功能；没有则写 `None`。
-- `Tested`：列出实际执行的验证命令和结果。
-- `Issues`：列出已知问题、阻塞项或文档与代码冲突；没有则写 `None`。
-- `Next`：说明下一步，例如 `等待 Codex Review`。
-- 不得声称执行了没有实际执行的测试。
-- 不得声称功能已经完成而实际没有完成。
-
-### Review 修复报告
-
-如果当前工作是根据：
-
-```text
-.codex/reviews/TASK-XXX-review.md
-```
-
-进行修复，报告必须额外包含：
-
-```text
-Review:
-TASK-XXX-review.md
-
-Review Status:
-FIXED / PARTIALLY_FIXED / BLOCKED
-```
-
-并明确列出：
-
-- 修复了哪些 Review 项目。
-- 哪些 Review 项目仍未解决。
-- 执行了哪些重新验证。
-- 是否需要再次进行 Codex Review。
-
-Cursor 不得修改 Review 原文。
-
-Review 文件保持：
-
-```text
-.codex/reviews/TASK-XXX-review.md
-```
-
-只读。
-
----
-
-## 插入后的章节关系
-
-你当前 README 已经有：
-
-```text
-12. 开发流程
-├── 12.1 开发服务器端口规则
-└── 12.2 Task 执行与 Review 流程
-
-13. 完成任务后的报告
-
-14. .cursor/ 文档分工
-15. 已知文档冲突
-16. Source of Truth 优先级
-17. 最重要原则
-```
-
-因此：
-
-**不要再新增 `12.3`。**
-
-直接用本文件内容，替换你当前 README 的：
-
-```text
-## 13. 完成任务后的报告
-
-### Changed
-...
-### Added
-...
-### Removed
-...
-### Tested
-...
-### Issues
-...
-### Next
-...
-```
+对用户说明：做完了什么、报告路径、请对 WorkBuddy 说 `Review TASK-XXX`。不要再贴完整报告，不要自行开始下一个 Task。
 
 ---
 
@@ -676,6 +590,7 @@ Review 文件保持：
 | 文件 | 职责 |
 | --- | --- |
 | `README.md` | 本文件：写代码必须遵守的实施规范 |
+| `reports/TASK-XXX.md` | 当前 Task 完成报告，供 WorkBuddy Review 读取 |
 | `TASKS.md` | 当前实现进度（需要时再创建） |
 | `IMPLEMENTATION.md` | 重要实现细节、坑、与规范的偏差（需要时再创建） |
 | `CODING_RULES.md` | 更细的编码约定（需要时再创建） |

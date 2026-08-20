@@ -125,3 +125,74 @@ The application should not look like a generic Element Plus administration panel
 When an accepted architecture decision must change, do not overwrite the old ADR. Create a new ADR that explains the change and migration impact.
 
 ---
+
+## ADR-009 — VisualEffect Contract: init(context) + update(audio, deltaTime, settings)
+
+**Status:** Accepted (2026-08-20, adjudicated by WorkBuddy/architecture role; user ratified)
+
+### Decision
+
+The common `VisualEffect` contract (extends ADR-005) is:
+
+```ts
+interface VisualEffectContext {
+  renderer: THREE.WebGLRenderer   // engine-owned; effects must NOT dispose
+  camera: THREE.PerspectiveCamera // engine-owned; effects must NOT dispose
+  width: number
+  height: number
+}
+
+interface VisualEffect {
+  readonly id: string
+  readonly name: string
+  readonly scene: THREE.Scene    // effect-owned; fully released in dispose()
+  init(context: VisualEffectContext): void
+  update(audio: AudioData, deltaTime: number, settings: VisualSettings): void
+  resize(width: number, height: number): void
+  dispose(): void
+}
+```
+
+### Reason
+
+`ARCHITECTURE.md` §8 and `TECHNICAL_SPEC.md` §4 specified conflicting lifecycle signatures (`init(container)` + `update(audio, settings)` vs `mount(context)` + `update(audio, deltaTime)`). This ADR resolves the conflict:
+
+1. `init(context)` is used because the VisualEngine owns the renderer/camera (TECHNICAL_SPEC §3); `init(container)` implied each effect creates its own renderer, contradicting engine ownership.
+2. `update` takes both `deltaTime` (frame-rate-independent animation) and `settings` (live parameter changes applied on the next frame).
+3. Each effect owns its own `THREE.Scene`; the engine renders `effect.scene`. Disposing the entire scene on effect switch prevents cross-effect resource leaks.
+
+### Impact
+
+Effects must never dispose the shared renderer/camera, and must fully dispose their own scene contents (geometries, materials, textures). TASK-003 is the reference implementation.
+
+---
+
+## ADR-010 — VisualSettings Is Effect-Specific Flat Settings Driven by ControlDefinition
+
+**Status:** Accepted (2026-08-20, adjudicated by WorkBuddy/architecture role; user ratified)
+
+### Decision
+
+`VisualSettings` is a flat, effect-specific key-value map:
+
+```ts
+type VisualSettings = Readonly<Record<string, number | string | boolean>>
+```
+
+The exact fields for each effect are declared via that effect's `EffectDefinition.controls: ControlDefinition[]`. The Inspector's four sections (Appearance / Motion / Voice Response / Light) are expressed as `ControlDefinition.group` values (`'appearance' | 'motion' | 'voiceResponse' | 'light'`), not as a fixed global type shape.
+
+### Reason
+
+`ARCHITECTURE.md` §11 specified a fixed nested `VisualSettings` shape (appearance/motion/voiceResponse/light with fixed fields), while `DATA_MODEL.md` §3/§6 defined settings as effect-specific fields driven by `ControlDefinition`. The DATA_MODEL direction is adopted because:
+
+1. ADR-006 already ruled that controls are schema-driven and adding an effect must not redesign the Inspector. A fixed nested shape hard-codes the parameters of the first three effects into a global type, breaking extensibility.
+2. Different effects require different parameter sets (PROJECT_SPEC §5 defines different voice→visual mappings per effect).
+3. The four Inspector sections remain fully supported as UI grouping metadata.
+
+`ARCHITECTURE.md` §11's field lists remain useful as reference checklists when defining each effect's controls, but they are not a global type constraint.
+
+### Impact
+
+Presets store `{ effect: effectId, settings: flat map }`. The fixed nested `VisualSettings` interface from `ARCHITECTURE.md` §11 is superseded for implementation purposes. TASK-003 is the reference implementation.
+
+---

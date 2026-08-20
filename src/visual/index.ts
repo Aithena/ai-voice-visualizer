@@ -1,9 +1,21 @@
-/**
- * Visual runtime boundary.
- *
- * Three.js, VisualEngine, and VisualEffect implementations belong in this
- * directory. Vue UI components must not import Three.js or own a render loop.
- *
- * TASK-001: directory and dependency only. No engine, effects, or shaders.
- */
-export {}
+export { VisualEngine } from './VisualEngine'
+export { VisualEngineError } from './errors'
+export { defaultSettings, mergeSettings } from './settings'
+export { EffectRegistry } from './registry'
+export { createPlaceholderOrb, placeholderOrbDefinition } from './effects/PlaceholderOrb'
+export { createLiquidOrb, liquidOrbDefinition, LiquidOrb } from './effects/LiquidOrb'
+export type {
+  AudioProvider,
+  ControlDefinition,
+  ControlGroup,
+  ControlSelectOption,
+  ControlType,
+  EffectDefinition,
+  EffectFactory,
+  VisualEffect,
+  VisualEffectContext,
+  VisualEngineErrorCode,
+  VisualEngineOptions,
+  VisualSettings,
+  VisualSettingsRecord,
+} from './types'

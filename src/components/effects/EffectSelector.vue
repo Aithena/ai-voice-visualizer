@@ -19,12 +19,19 @@ function onSelect(id: EffectId): void {
         <button
           class="selector__item"
           type="button"
-          :class="{ 'is-active': effect.id === selectedEffectId }"
+          :class="{
+            'is-active': effect.id === selectedEffectId,
+            'is-disabled': !editorStore.isEffectAvailable(effect.id),
+          }"
+          :disabled="!editorStore.isEffectAvailable(effect.id)"
           :aria-pressed="effect.id === selectedEffectId"
+          :aria-disabled="!editorStore.isEffectAvailable(effect.id)"
           @click="onSelect(effect.id)"
         >
           <span class="selector__name">{{ effect.name }}</span>
-          <span class="selector__desc">{{ effect.description }}</span>
+          <span class="selector__desc">
+            {{ editorStore.isEffectAvailable(effect.id) ? effect.description : 'Not yet available' }}
+          </span>
         </button>
       </li>
     </ul>
@@ -72,13 +79,19 @@ function onSelect(id: EffectId): void {
   text-align: left;
 }
 
-.selector__item:hover {
+.selector__item:hover:not(:disabled) {
   background: var(--color-bg-hover);
 }
 
 .selector__item.is-active {
   border-left-color: var(--color-accent);
   background: var(--color-bg-hover);
+}
+
+.selector__item.is-disabled {
+  color: var(--color-text-faint);
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .selector__name {
@@ -90,6 +103,10 @@ function onSelect(id: EffectId): void {
 .selector__desc {
   color: var(--color-text-muted);
   font-size: 12px;
+}
+
+.selector__item.is-disabled .selector__desc {
+  color: var(--color-text-faint);
 }
 
 @media (max-width: 960px) {
