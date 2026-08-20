@@ -23,4 +23,6 @@
 
 - 2026-08-20 已更新 STATUS.md：写明角色交接（WorkBuddy 接替 Codex 架构角色）、TASK-001 遗留端口问题、Next Action
 - TASK-001：CHANGES_REQUIRED——Vite 端口上限问题未修复（2026-08-20 复核仍存在）
-- TASK-002：PLANNED，等 Cursor 实现（建议先修 TASK-001 遗留问题）
+- TASK-002：**COMPLETED**（2026-08-20 Review APPROVED，报告在 .codex/reviews/TASK-002-review.md）；TASK-003 PLANNED 待我起草
+- 待用户裁定：工作区未提交变更——vite.config.ts（strictPort true→false）与 .cursor/README.md（改写+损坏，混入补丁指令元文本）；新端口策略与 TASK-001 Review 依据矛盾
+- 环境备忘：本机 safe-delete shim 拦截 Vite 清空 dist/，构建前需手动 `rm -rf dist`

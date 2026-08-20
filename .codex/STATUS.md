@@ -1,18 +1,29 @@
 # Project Status
 
-Current Task: TASK-002
+Current Task: TASK-003
 
 Status: PLANNED
 
-Current Phase: Audio Foundation
+Current Phase: Audio Foundation → Visual Foundation (pending TASK-003 specification)
 
 Next Action:
-Cursor should first fix the TASK-001 review finding (Vite dev-server port range 18801-18899, see reviews/TASK-001-review.md), then read the project documentation and implement TASK-002.
+1. WorkBuddy (architecture) drafts the TASK-003 specification in .codex/tasks/.
+2. User to adjudicate working-tree anomalies before or alongside TASK-003 (see .codex/reviews/TASK-002-review.md, "Working-Tree Anomalies"):
+   - Uncommitted vite.config.ts change (strictPort true → false); TASK-001 HIGH port finding still unresolved.
+   - Uncommitted .cursor/README.md rewrite contains pasted patch instructions (document corruption); port policy now conflicts with the rule TASK-001 Review was based on.
+3. TASK-002 Audio Foundation is APPROVED (COMPLETED) — no required changes.
 
 Blocked:
-TASK-001 is CHANGES_REQUIRED — the Vite port upper-bound fix has not been applied yet (re-verified 2026-08-20).
+None for TASK-003 work itself. Outstanding issues awaiting user decision:
+- TASK-001 remains CHANGES_REQUIRED (port upper bound not enforced).
+- .cursor/README.md corruption cleanup.
 
 ---
+
+## Status History
+
+- TASK-001 — CHANGES_REQUIRED (port upper-bound finding open; adjudication pending)
+- TASK-002 — COMPLETED (review APPROVED, 2026-08-20, see reviews/TASK-002-review.md)
 
 ## Coordination Note (2026-08-20)
 
