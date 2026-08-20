@@ -6,6 +6,7 @@ import { isMissingSelectOptions } from '@/types/editor'
 import { useEditorStore } from '@/stores/editor'
 
 const GROUP_ORDER = [
+  { id: 'style', label: 'Style' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'motion', label: 'Motion' },
   { id: 'voiceResponse', label: 'Voice Response' },

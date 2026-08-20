@@ -87,6 +87,7 @@ export const placeholderOrbDefinition: EffectDefinition = {
   name: 'PlaceholderOrb',
   description: 'Reference orb for visual runtime verification',
   controls: CONTROLS,
+  preferredStageStyle: 'dark',
 }
 
 export function createPlaceholderOrb(): VisualEffect {

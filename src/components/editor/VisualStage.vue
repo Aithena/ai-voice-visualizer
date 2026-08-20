@@ -6,14 +6,16 @@ import { useEditorStore } from '@/stores/editor'
 import {
   VisualEngine,
   VisualEngineError,
+  createGlassOrb,
   createLiquidOrb,
   createPlaceholderOrb,
+  glassOrbDefinition,
   liquidOrbDefinition,
   placeholderOrbDefinition,
 } from '@/visual'
 
 const editorStore = useEditorStore()
-const { selectedEffectId, settings, selectedEffect } = storeToRefs(editorStore)
+const { selectedEffectId, settings, selectedEffect, stageStyle } = storeToRefs(editorStore)
 
 const viewport = ref<HTMLElement | null>(null)
 const errorMessage = ref<string | null>(null)
@@ -32,6 +34,10 @@ function applyCurrentEffect(): void {
   }
 
   const effectId = selectedEffectId.value
+  if (!effectId) {
+    return
+  }
+
   try {
     engine.setEffect(effectId)
     suppressSettingsWatch = true
@@ -77,6 +83,22 @@ function resolveFallback(failedId: EffectId): EffectId | null {
   return null
 }
 
+function applyLaunchQuery(defaultId: EffectId): void {
+  const params = new URLSearchParams(window.location.search)
+  const queryEffect = params.get('effect')
+  const queryStage = params.get('stage')
+
+  if (queryEffect && isEffectId(queryEffect) && editorStore.isEffectAvailable(queryEffect)) {
+    editorStore.selectEffect(queryEffect)
+  } else {
+    editorStore.selectEffect(defaultId)
+  }
+
+  if (queryStage === 'dark' || queryStage === 'light') {
+    editorStore.setStageStyle(queryStage)
+  }
+}
+
 onMounted(() => {
   const container = viewport.value
   if (!container) {
@@ -84,13 +106,14 @@ onMounted(() => {
   }
 
   try {
-    engine = new VisualEngine(container)
+    engine = new VisualEngine(container, {
+      onEffectSelected(definition) {
+        editorStore.applyPreferredStageStyle(definition.preferredStageStyle)
+      },
+    })
+    engine.registerEffect(glassOrbDefinition, createGlassOrb)
     engine.registerEffect(liquidOrbDefinition, createLiquidOrb)
     engine.registerEffect(placeholderOrbDefinition, createPlaceholderOrb)
-
-    const availableIds = engine.getEffectIds().filter(isEffectId)
-    const defaultId = availableIds[0] ?? liquidOrbDefinition.id
-    editorStore.syncAvailableEffects(availableIds, defaultId)
 
     observer = new ResizeObserver((entries) => {
       const entry = entries[0]
@@ -120,7 +143,10 @@ onMounted(() => {
       { deep: true },
     )
 
-    editorStore.selectEffect(defaultId)
+    const availableIds = engine.getEffectIds().filter(isEffectId)
+    const defaultId: EffectId = availableIds[0] ?? 'glass-orb'
+    editorStore.syncAvailableEffects(availableIds, defaultId)
+    applyLaunchQuery(defaultId)
     engine.resize(container.clientWidth, container.clientHeight)
     engine.start()
   } catch (error) {
@@ -144,7 +170,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="stage" aria-label="Visual Stage">
+  <section class="stage" :data-stage-bg="stageStyle" aria-label="Visual Stage">
     <p class="stage__label">Visual Stage</p>
     <div ref="viewport" class="stage__viewport" />
     <p v-if="errorMessage" class="stage__error">{{ errorMessage }}</p>
@@ -158,7 +184,11 @@ onBeforeUnmount(() => {
   display: flex;
   min-width: 0;
   min-height: 0;
-  background: var(--color-bg-stage);
+  background: var(--color-bg-stage-dark);
+}
+
+.stage[data-stage-bg="light"] {
+  background: var(--color-bg-stage-light);
 }
 
 .stage__viewport {
@@ -202,5 +232,13 @@ onBeforeUnmount(() => {
   left: var(--space-4);
   color: var(--color-text-muted);
   font-size: 12px;
+}
+
+.stage[data-stage-bg="light"] {
+  .stage__label,
+  .stage__effect,
+  .stage__error {
+    color: var(--color-text-stage-light-muted);
+  }
 }
 </style>

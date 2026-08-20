@@ -1,4 +1,9 @@
-export type EffectId = 'placeholder-orb' | 'liquid-orb' | 'glass-wave' | 'energy-core'
+export type EffectId =
+  | 'glass-orb'
+  | 'placeholder-orb'
+  | 'liquid-orb'
+  | 'glass-wave'
+  | 'energy-core'
 
 export interface EffectOption {
   id: EffectId
@@ -7,6 +12,11 @@ export interface EffectOption {
 }
 
 export const EFFECT_OPTIONS: readonly EffectOption[] = [
+  {
+    id: 'glass-orb',
+    name: 'GlassOrb',
+    description: 'Frosted glass energy',
+  },
   {
     id: 'placeholder-orb',
     name: 'PlaceholderOrb',

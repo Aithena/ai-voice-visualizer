@@ -1,7 +1,9 @@
 import type * as THREE from 'three'
 import type { AudioData } from '@/audio'
 
-export type ControlGroup = 'appearance' | 'motion' | 'voiceResponse' | 'light'
+export type ControlGroup = 'appearance' | 'style' | 'motion' | 'voiceResponse' | 'light'
+
+export type StageStyle = 'dark' | 'light'
 
 export type ControlType = 'slider' | 'color' | 'switch' | 'select'
 
@@ -32,6 +34,7 @@ export interface EffectDefinition {
   name: string
   description?: string
   controls: ControlDefinition[]
+  preferredStageStyle?: StageStyle
 }
 
 export interface VisualEffectContext {
@@ -57,6 +60,8 @@ export type AudioProvider = () => AudioData
 
 export interface VisualEngineOptions {
   audioProvider?: AudioProvider
+  /** Discrete editor hook after a successful setEffect. Not called from RAF. */
+  onEffectSelected?: (definition: EffectDefinition) => void
 }
 
 export type VisualEngineErrorCode =

@@ -31,6 +31,7 @@ const SILENT_AUDIO: AudioData = Object.freeze({
 
 export class VisualEngine {
   private readonly audioProvider?: AudioProvider
+  private readonly onEffectSelected?: (definition: EffectDefinition) => void
   private readonly registry = new EffectRegistry()
   private readonly camera: PerspectiveCamera
   private readonly context: VisualEffectContext
@@ -46,6 +47,7 @@ export class VisualEngine {
 
   constructor(container: HTMLElement, options: VisualEngineOptions = {}) {
     this.audioProvider = options.audioProvider
+    this.onEffectSelected = options.onEffectSelected
 
     const renderer = createRenderer(container)
     const camera = new PerspectiveCamera(45, 1, 0.1, 100)
@@ -96,6 +98,7 @@ export class VisualEngine {
     this.effect = next
     this.currentEffectId = effectId
     this.settings = defaultSettings(entry.definition.controls)
+    this.onEffectSelected?.(entry.definition)
   }
 
   getCurrentEffectId(): string | null {

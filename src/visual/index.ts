@@ -4,6 +4,7 @@ export { defaultSettings, mergeSettings } from './settings'
 export { EffectRegistry } from './registry'
 export { createPlaceholderOrb, placeholderOrbDefinition } from './effects/PlaceholderOrb'
 export { createLiquidOrb, liquidOrbDefinition, LiquidOrb } from './effects/LiquidOrb'
+export { createGlassOrb, glassOrbDefinition, GlassOrb } from './effects/GlassOrb'
 export type {
   AudioProvider,
   ControlDefinition,
@@ -12,6 +13,7 @@ export type {
   ControlType,
   EffectDefinition,
   EffectFactory,
+  StageStyle,
   VisualEffect,
   VisualEffectContext,
   VisualEngineErrorCode,

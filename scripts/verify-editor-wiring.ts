@@ -40,8 +40,28 @@ function runEditorWiringSelfCheck(): void {
 
   setActivePinia(createPinia())
   const store = useEditorStore()
+  if (store.selectedEffectId !== null) {
+    throw new Error('selectedEffectId should start unset')
+  }
+  if (store.stageStyle !== 'dark' || store.userOverrideStageStyle !== false) {
+    throw new Error('stage style should start as dark without override')
+  }
+
   store.syncAvailableEffects(['placeholder-orb'], 'placeholder-orb')
   store.syncEffectDefinition(placeholderOrbDefinition, settings)
+  if (store.selectedEffectId !== 'placeholder-orb') {
+    throw new Error('syncAvailableEffects should adopt the default when unset')
+  }
+
+  store.applyPreferredStageStyle('light')
+  if (store.stageStyle !== 'light') {
+    throw new Error('preferred stage style should apply before a user override')
+  }
+  store.setStageStyle('dark')
+  store.applyPreferredStageStyle('light')
+  if (store.stageStyle !== 'dark' || store.userOverrideStageStyle !== true) {
+    throw new Error('user override should block preferred stage style')
+  }
 
   const beforeId = store.selectedEffectId
   store.selectEffect('liquid-orb')

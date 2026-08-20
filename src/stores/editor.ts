@@ -7,17 +7,21 @@ import {
   type EffectOption,
 } from '../types/editor'
 import { defaultSettings } from '../visual/settings'
-import type { EffectDefinition, VisualSettingsRecord } from '../visual/types'
+import type { EffectDefinition, StageStyle, VisualSettingsRecord } from '../visual/types'
 
 export const useEditorStore = defineStore('editor', () => {
-  const selectedEffectId = ref<EffectId>('placeholder-orb')
+  const selectedEffectId = ref<EffectId | null>(null)
   const availableEffectIds = ref<EffectId[]>([])
   const currentDefinition = ref<EffectDefinition | null>(null)
   const settings = ref<VisualSettingsRecord>({})
   const inspectorOpen = ref(false)
+  const stageStyle = ref<StageStyle>('dark')
+  const userOverrideStageStyle = ref(false)
 
   const selectedEffect = computed<EffectOption>(() => {
-    const match = EFFECT_OPTIONS.find((effect) => effect.id === selectedEffectId.value)
+    const match = selectedEffectId.value
+      ? EFFECT_OPTIONS.find((effect) => effect.id === selectedEffectId.value)
+      : undefined
     return match ?? EFFECT_OPTIONS[0]
   })
 
@@ -54,7 +58,7 @@ export const useEditorStore = defineStore('editor', () => {
     const available = ids.filter(isEffectId)
     availableEffectIds.value = available
 
-    if (available.includes(selectedEffectId.value)) {
+    if (selectedEffectId.value !== null && available.includes(selectedEffectId.value)) {
       return
     }
 
@@ -79,12 +83,26 @@ export const useEditorStore = defineStore('editor', () => {
     inspectorOpen.value = open
   }
 
+  function setStageStyle(style: StageStyle): void {
+    stageStyle.value = style
+    userOverrideStageStyle.value = true
+  }
+
+  function applyPreferredStageStyle(style?: StageStyle): void {
+    if (!style || userOverrideStageStyle.value) {
+      return
+    }
+    stageStyle.value = style
+  }
+
   return {
     selectedEffectId,
     availableEffectIds,
     currentDefinition,
     settings,
     inspectorOpen,
+    stageStyle,
+    userOverrideStageStyle,
     selectedEffect,
     isEffectAvailable,
     selectEffect,
@@ -93,5 +111,7 @@ export const useEditorStore = defineStore('editor', () => {
     syncAvailableEffects,
     syncEffectDefinition,
     setInspectorOpen,
+    setStageStyle,
+    applyPreferredStageStyle,
   }
 })

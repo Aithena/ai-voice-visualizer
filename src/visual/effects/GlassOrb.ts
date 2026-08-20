@@ -8,7 +8,7 @@ import {
 } from 'three'
 import type { AudioData } from '@/audio'
 import { disposeObject3D } from '../dispose'
-import { liquidOrbFragmentShader, liquidOrbVertexShader } from '../shaders/liquidOrb'
+import { glassOrbFragmentShader, glassOrbVertexShader } from '../shaders/glassOrb'
 import type {
   ControlDefinition,
   EffectDefinition,
@@ -19,28 +19,48 @@ import type {
 
 const CONTROLS: ControlDefinition[] = [
   {
-    key: 'primaryColor',
-    label: 'Primary Color',
+    key: 'rimColor',
+    label: 'Rim Color',
     type: 'color',
-    defaultValue: '#8b5cf6',
+    defaultValue: '#d946ef',
     group: 'appearance',
   },
   {
-    key: 'secondaryColor',
-    label: 'Secondary Color',
+    key: 'coreColor',
+    label: 'Core Color',
     type: 'color',
-    defaultValue: '#ec4899',
+    defaultValue: '#c4b5fd',
     group: 'appearance',
   },
   {
     key: 'opacity',
     label: 'Opacity',
     type: 'slider',
-    defaultValue: 0.9,
-    min: 0.1,
+    defaultValue: 0.85,
+    min: 0.5,
     max: 1,
     step: 0.05,
     group: 'appearance',
+  },
+  {
+    key: 'rimWidth',
+    label: 'Rim Width',
+    type: 'slider',
+    defaultValue: 0.55,
+    min: 0.2,
+    max: 1.5,
+    step: 0.05,
+    group: 'style',
+  },
+  {
+    key: 'refractionIntensity',
+    label: 'Refraction',
+    type: 'slider',
+    defaultValue: 0.35,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    group: 'style',
   },
   {
     key: 'idleSpeed',
@@ -50,16 +70,6 @@ const CONTROLS: ControlDefinition[] = [
     min: 0.1,
     max: 3,
     step: 0.1,
-    group: 'motion',
-  },
-  {
-    key: 'distortion',
-    label: 'Distortion',
-    type: 'slider',
-    defaultValue: 0.25,
-    min: 0,
-    max: 1,
-    step: 0.05,
     group: 'motion',
   },
   {
@@ -73,28 +83,18 @@ const CONTROLS: ControlDefinition[] = [
     group: 'voiceResponse',
   },
   {
-    key: 'bassSensitivity',
-    label: 'Bass Sensitivity',
+    key: 'speechSensitivity',
+    label: 'Speech Sensitivity',
     type: 'slider',
-    defaultValue: 1,
+    defaultValue: 1.2,
     min: 0,
     max: 2,
     step: 0.05,
     group: 'voiceResponse',
   },
   {
-    key: 'trebleSensitivity',
-    label: 'Treble Sensitivity',
-    type: 'slider',
-    defaultValue: 1,
-    min: 0,
-    max: 2,
-    step: 0.05,
-    group: 'voiceResponse',
-  },
-  {
-    key: 'glowIntensity',
-    label: 'Glow',
+    key: 'highlightStrength',
+    label: 'Highlight Strength',
     type: 'slider',
     defaultValue: 1,
     min: 0,
@@ -104,45 +104,47 @@ const CONTROLS: ControlDefinition[] = [
   },
 ]
 
-export const liquidOrbDefinition: EffectDefinition = {
-  id: 'liquid-orb',
-  name: 'LiquidOrb',
-  description: 'Soft liquid AI energy orb',
+export const glassOrbDefinition: EffectDefinition = {
+  id: 'glass-orb',
+  name: 'GlassOrb',
+  description: 'Frosted glass AI energy orb',
   controls: CONTROLS,
-  preferredStageStyle: 'dark',
+  preferredStageStyle: 'light',
 }
 
-export function createLiquidOrb(): VisualEffect {
-  return new LiquidOrb()
+export function createGlassOrb(): VisualEffect {
+  return new GlassOrb()
 }
 
-export interface LiquidOrbDebugUniforms {
+export interface GlassOrbDebugUniforms {
   uTime: number
   uVolume: number
   uBass: number
   uTreble: number
   uPitch: number
   uSpeechActivity: number
+  uRimWidth: number
+  uHighlightStrength: number
+  uRefractionIntensity: number
   uOpacity: number
-  uDistortion: number
-  uGlowIntensity: number
 }
 
-export class LiquidOrb implements VisualEffect {
-  readonly id = liquidOrbDefinition.id
-  readonly name = liquidOrbDefinition.name
+export class GlassOrb implements VisualEffect {
+  readonly id = glassOrbDefinition.id
+  readonly name = glassOrbDefinition.name
   readonly scene = new Scene()
 
-  private readonly primaryColor = new Color('#8b5cf6')
-  private readonly secondaryColor = new Color('#ec4899')
+  private readonly rimColor = new Color('#d946ef')
+  private readonly coreColor = new Color('#c4b5fd')
+  private readonly highlightColor = new Color('#fbcfe8')
   private mesh: Mesh<IcosahedronGeometry, ShaderMaterial> | null = null
   private material: ShaderMaterial | null = null
   private elapsed = 0
-  private appliedPrimary = ''
-  private appliedSecondary = ''
+  private appliedRim = ''
+  private appliedCore = ''
 
   init(_context: VisualEffectContext): void {
-    const geometry = new IcosahedronGeometry(1, 4)
+    const geometry = new IcosahedronGeometry(1, 5)
     const material = new ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -151,14 +153,16 @@ export class LiquidOrb implements VisualEffect {
         uTreble: { value: 0 },
         uPitch: { value: 0 },
         uSpeechActivity: { value: 0 },
-        uPrimaryColor: { value: this.primaryColor.clone() },
-        uSecondaryColor: { value: this.secondaryColor.clone() },
-        uOpacity: { value: 0.9 },
-        uDistortion: { value: 0.25 },
-        uGlowIntensity: { value: 1 },
+        uRimColor: { value: this.rimColor.clone() },
+        uCoreColor: { value: this.coreColor.clone() },
+        uHighlightColor: { value: this.highlightColor.clone() },
+        uRimWidth: { value: 0.55 },
+        uHighlightStrength: { value: 1 },
+        uRefractionIntensity: { value: 0.35 },
+        uOpacity: { value: 0.85 },
       },
-      vertexShader: liquidOrbVertexShader,
-      fragmentShader: liquidOrbFragmentShader,
+      vertexShader: glassOrbVertexShader,
+      fragmentShader: glassOrbFragmentShader,
       transparent: true,
       depthWrite: false,
       side: DoubleSide,
@@ -169,8 +173,8 @@ export class LiquidOrb implements VisualEffect {
     this.mesh = mesh
     this.material = material
     this.elapsed = 0
-    this.appliedPrimary = ''
-    this.appliedSecondary = ''
+    this.appliedRim = ''
+    this.appliedCore = ''
   }
 
   update(audio: AudioData, deltaTime: number, settings: VisualSettings): void {
@@ -189,43 +193,41 @@ export class LiquidOrb implements VisualEffect {
 
     const idleSpeed = readNumber(settings.idleSpeed, 1, 0.1, 3)
     const volumeSensitivity = readNumber(settings.volumeSensitivity, 1, 0, 2)
-    const bassSensitivity = readNumber(settings.bassSensitivity, 1, 0, 2)
-    const trebleSensitivity = readNumber(settings.trebleSensitivity, 1, 0, 2)
-    const distortion = readNumber(settings.distortion, 0.25, 0, 1)
-    const glowIntensity = readNumber(settings.glowIntensity, 1, 0, 3)
-    const opacity = readNumber(settings.opacity, 0.9, 0.1, 1)
+    const speechSensitivity = readNumber(settings.speechSensitivity, 1.2, 0, 2)
+    const rimWidth = readNumber(settings.rimWidth, 0.55, 0.2, 1.5)
+    const refractionIntensity = readNumber(settings.refractionIntensity, 0.35, 0, 1)
+    const highlightStrength = readNumber(settings.highlightStrength, 1, 0, 3)
+    const opacity = readNumber(settings.opacity, 0.85, 0.5, 1)
 
-    const animationScale = 0.4 + speech * 0.6
-    this.elapsed += deltaTime * 0.001 * idleSpeed * animationScale
+    this.elapsed += deltaTime * 0.001 * idleSpeed
 
-    const breathe = 1 + Math.sin(this.elapsed * 1.55) * 0.048
-    const audioScale = 1 + volume * volumeSensitivity * 0.5
-    const scale = breathe * audioScale
-    mesh.scale.set(scale, scale, scale)
-    mesh.rotation.y += deltaTime * 0.00018 * idleSpeed * animationScale
+    const audioScale = 1 + volume * volumeSensitivity * 0.08
+    mesh.scale.set(audioScale, audioScale, audioScale)
+    mesh.rotation.y += deltaTime * 0.00012 * idleSpeed
 
     uniforms.uTime.value = this.elapsed
     uniforms.uVolume.value = volume
     uniforms.uBass.value = bass
     uniforms.uTreble.value = treble
     uniforms.uPitch.value = pitch
-    uniforms.uSpeechActivity.value = speech
+    uniforms.uSpeechActivity.value = speech * speechSensitivity
+    uniforms.uRimWidth.value = rimWidth
+    uniforms.uHighlightStrength.value = highlightStrength
+    uniforms.uRefractionIntensity.value = refractionIntensity
     uniforms.uOpacity.value = opacity
-    uniforms.uDistortion.value = clamp01(distortion + bass * bassSensitivity * 0.55)
-    uniforms.uGlowIntensity.value = clampRange(glowIntensity * (1 + treble * trebleSensitivity), 0, 6)
 
-    const primary = settings.primaryColor
-    if (typeof primary === 'string' && primary !== this.appliedPrimary) {
-      this.primaryColor.set(primary)
-      uniforms.uPrimaryColor.value.copy(this.primaryColor)
-      this.appliedPrimary = primary
+    const rim = settings.rimColor
+    if (typeof rim === 'string' && rim !== this.appliedRim) {
+      this.rimColor.set(rim)
+      uniforms.uRimColor.value.copy(this.rimColor)
+      this.appliedRim = rim
     }
 
-    const secondary = settings.secondaryColor
-    if (typeof secondary === 'string' && secondary !== this.appliedSecondary) {
-      this.secondaryColor.set(secondary)
-      uniforms.uSecondaryColor.value.copy(this.secondaryColor)
-      this.appliedSecondary = secondary
+    const core = settings.coreColor
+    if (typeof core === 'string' && core !== this.appliedCore) {
+      this.coreColor.set(core)
+      uniforms.uCoreColor.value.copy(this.coreColor)
+      this.appliedCore = core
     }
   }
 
@@ -238,7 +240,7 @@ export class LiquidOrb implements VisualEffect {
     this.material = null
   }
 
-  getDebugUniforms(): LiquidOrbDebugUniforms {
+  getDebugUniforms(): GlassOrbDebugUniforms {
     const uniforms = this.material?.uniforms
     return {
       uTime: Number(uniforms?.uTime.value ?? 0),
@@ -247,9 +249,10 @@ export class LiquidOrb implements VisualEffect {
       uTreble: Number(uniforms?.uTreble.value ?? 0),
       uPitch: Number(uniforms?.uPitch.value ?? 0),
       uSpeechActivity: Number(uniforms?.uSpeechActivity.value ?? 0),
+      uRimWidth: Number(uniforms?.uRimWidth.value ?? 0),
+      uHighlightStrength: Number(uniforms?.uHighlightStrength.value ?? 0),
+      uRefractionIntensity: Number(uniforms?.uRefractionIntensity.value ?? 0),
       uOpacity: Number(uniforms?.uOpacity.value ?? 0),
-      uDistortion: Number(uniforms?.uDistortion.value ?? 0),
-      uGlowIntensity: Number(uniforms?.uGlowIntensity.value ?? 0),
     }
   }
 }
