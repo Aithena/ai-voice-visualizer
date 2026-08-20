@@ -25,6 +25,8 @@
 - TASK-002：**COMPLETED**（2026-08-20 Review APPROVED，报告在 .codex/reviews/TASK-002-review.md）
 - TASK-003：**COMPLETED**（2026-08-20 Review APPROVED，0 必改 4 INFO，报告在 .codex/reviews/TASK-003-review.md；运行时独立验证 = headless Edge 截图 + md5 对比 → 球体居中且两帧不同，证明动画运转）
 - TASK-004：**COMPLETED**（2026-08-20 Review APPROVED，0 必改 3 INFO + 2 LOW，报告在 .codex/reviews/TASK-004-review.md；运行时独立验证 = headless Edge 截图 1400×900 完整 UI——四分区 + 6 控件 + Selector 禁用态 + Reset 启用全可见；LOW-1 是 applyCurrentEffect 缺 try/catch 兜底 INIT_FAILED，将随产品效果实现变得重要）
-- TASK-005：**PLANNED**（2026-08-20 规范已起草于 .codex/tasks/TASK-005.md——LiquidOrb 首个产品效果：自定义 ShaderMaterial（渐变/fresnel glow/vertex noise 形变，AudioData 走 uniform，ARCHITECTURE §14），9 控件四分区，注册顺序使其成为默认效果，捆绑 LOW-1 修复（applyCurrentEffect try/catch 回退）；GLSL 内联 Ashima noise 不算新依赖；零新增依赖；Out of Scope：post-processing、平滑切换过渡（已记 STATUS 候选后续 Task）），等 Cursor 实现
+- TASK-005：**COMPLETED**（2026-08-20 fast-track APPROVED，1 行 fix 已修：VisualStage.vue:123 加 `editorStore.selectEffect(defaultId)` + 删冗余 `applyCurrentEffect()`；报告在 .codex/reviews/TASK-005-review.md 头部加 Fix Verification 段；独立验证 = 3s/6s headless Edge 截图都显示完整紫粉渐变球 + DOM dump 9 控件四分区全在；LiquidOrb 正式成为默认效果——首个产品效果落地）
+- **快速流程约定**（TASK-005 创立）：对 1-2 行 fix 类修订，可走"快速流程"——不另开新 Task 规范、不重走完整 Review，由 Cursor 改完贴截图 + 我独立截图确认即可，在原 review 报告头部加 Fix Verification 段
+- **流程教训（已记入未来 Task 规范模板）**：写 Task 规范时若验收涉及「页面默认状态」，Testing Requirements 必须要求 Cursor 自跑 headless 截图（不是只给 Reviewer 补位）——TASK-005 的默认效果 bug 30 秒就能在 self-check 阶段抓出
 - 验证备忘：本环境可借 Windows Edge headless（swiftshader）做 WebGL 视觉验证；`msedge.exe --headless --use-angle=swiftshader --enable-unsafe-swiftshader --screenshot=...png --virtual-time-budget=ms` 拍多帧 + md5sum 对比可证动画存在，无需 Playwright/Puppeteer
 - 环境备忘：本机 safe-delete shim 拦截 Vite 清空 dist/，构建前需手动 `rm -rf dist`

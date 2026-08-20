@@ -1,15 +1,21 @@
 # Project Status
 
-Current Task: TASK-005
+Current Task: TASK-006
 
-Status: PLANNED (specification drafted, waiting for Cursor implementation)
+Status: PLANNED (spec at .codex/tasks/TASK-006.md, awaiting user approval before handing to Cursor)
 
-Current Phase: Product Effect — LiquidOrb (first product effect; bundles TASK-004 LOW-1 fix)
+Current Phase: Product Effect — GlassOrb (second product effect, white-stage glass aesthetic matching user reference image 1) + Stage dark/light background toggle (Editor capability upgrade)
 
 Next Action:
-1. Cursor implements TASK-005 per `.codex/tasks/TASK-005.md` — LiquidOrb (custom ShaderMaterial: gradient/fresnel glow/vertex-noise deformation, audio via uniforms per ARCHITECTURE §14), 9 controls across four groups, registration order making `liquid-orb` the default effect, plus LOW-1 fix (`applyCurrentEffect` try/catch with fallback to previous effect). **Zero new dependencies.**
-2. Deferred candidates for later Tasks (recorded, not scheduled): smooth effect-switch transition (PROJECT_SPEC §7, engine-level, affects all effects); post-processing / bloom (would need its own Task + ADR); `three` chunk splitting (TASK-003 INFO-1); engine `resetSettings()` dead code (TASK-004 LOW-2).
-3. ADR housekeeping (non-blocking): `ControlDefinition.options` shape extension remains a future ADR candidate; user to decide if/when to record in `.codex/DECISIONS.md`.
+1. **Await user approval of TASK-006 spec**, then forward to Cursor for implementation.
+2. TASK-006 scope: (a) Stage data-stage-bg attribute + dark/light toggle in Header + Pinia stageStyle/userOverrideStageStyle + EffectDefinition.preferredStageStyle optional field; (b) GlassOrb as independent Effect (shader at src/visual/shaders/glassOrb.ts, 9 controls across 5 groups {style, appearance, motion, voiceResponse, light} — adding a `style` group is the deliberate divergence from LiquidOrb's 4-group structure because GlassOrb emphasizes rim/refraction as style features), default registration before LiquidOrb so GlassOrb becomes the default on load (clearing the TASK-005-era hardcoded 'placeholder-orb' from editorStore).
+3. Spec-deferred decisions:
+   - `EffectDefinition.preferredStageStyle` shape: spec says it is types.ts-level metadata, no new ADR needed unless Reviewer explicitly requests; if requested, follow the ADR-009/010 temporary-authorization pattern.
+   - userOverrideStageStyle persistence (localStorage): out of scope for TASK-006, registered as future Task.
+   - Fake audio for visual verification: spec leaves room (engine sine-wave helper OR store-level fake); Cursor should pick the cheapest path that yields a verifiable screenshot.
+4. Process lesson applied: TASK-006 visual acceptance (§6.2) requires Cursor to perform its own headless Edge screenshots before handing to Reviewer — TASK-005's default-routing bug would have been caught at implementation handoff if this rule had existed then.
+
+Pending backlog (recorded, not scheduled): GlassOrb → AuroraOrb (reference image 2) → StarburstOrb (reference image 3) → smooth effect switching (PROJECT_SPEC §7) → post-processing/bloom (needs new ADR) → preset save/load (ARCHITECTURE §16) → microphone wiring (AudioAnalyzer.start ↔ Header Mic) → localStorage persistence for stageStyle → `three` chunk splitting (TASK-003 INFO-1) → engine resetSettings() dead code cleanup (TASK-004 LOW-2) → ControlDefinition.options shape extension (future ADR candidate).
 
 Adjudicated (2026-08-20, by user):
 - Port policy: current code is authoritative — `strictPort: false`, auto-increment allowed. The 18801–18899 range becomes advisory discipline rather than config-enforced. TASK-001 HIGH port finding is closed by this decision; TASK-001 is now COMPLETED (skeleton delivered, review finding adjudicated away).
@@ -26,6 +32,7 @@ None.
 - TASK-002 — COMPLETED (review APPROVED, 2026-08-20, see reviews/TASK-002-review.md; 5 LOW/INFO notes, no required changes)
 - TASK-003 — COMPLETED (review APPROVED, 2026-08-20, see reviews/TASK-003-review.md; 0 required changes, 4 INFO notes; runtime independently verified via headless Edge screenshots at virtual time 5 s and 6.5 s, orb visible and animating)
 - TASK-004 — COMPLETED (review APPROVED, 2026-08-20, see reviews/TASK-004-review.md; 0 required changes, 3 INFO + 2 LOW notes; runtime independently verified via headless Edge screenshot — all four Inspector groups + 6 controls + selector availability + enabled Reset confirmed)
+- TASK-005 — COMPLETED (review 2026-08-20 APPROVED via fast-track; see reviews/TASK-005-review.md — LiquidOrb is default on load, 9 controls / 4 groups confirmed, headless screenshots at 3 s and 6 s both show rendered orb; original 1-line default-routing bug fixed at VisualStage.vue:123)
 
 ## Coordination Note (2026-08-20)
 

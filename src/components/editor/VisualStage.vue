@@ -91,9 +91,6 @@ onMounted(() => {
     const availableIds = engine.getEffectIds().filter(isEffectId)
     const defaultId = availableIds[0] ?? liquidOrbDefinition.id
     editorStore.syncAvailableEffects(availableIds, defaultId)
-    applyCurrentEffect()
-    engine.resize(container.clientWidth, container.clientHeight)
-    engine.start()
 
     observer = new ResizeObserver((entries) => {
       const entry = entries[0]
@@ -122,6 +119,10 @@ onMounted(() => {
       },
       { deep: true },
     )
+
+    editorStore.selectEffect(defaultId)
+    engine.resize(container.clientWidth, container.clientHeight)
+    engine.start()
   } catch (error) {
     engine?.dispose()
     engine = null
