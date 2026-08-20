@@ -1,9 +1,4 @@
-/**
- * Audio analysis boundary.
- *
- * AudioAnalyzer, PitchDetector, and related runtime types belong here.
- * Vue UI components must not create AudioContext or own analysis loops.
- *
- * TASK-001: directory only. No microphone or analyzer implementation.
- */
-export {}
+export { AudioAnalyzer } from './AudioAnalyzer'
+export { AudioAnalyzerError } from './errors'
+export { FREQUENCY_BANDS, PITCH_RANGE } from './types'
+export type { AudioAnalyzerErrorCode, AudioAnalyzerOptions, AudioData } from './types'

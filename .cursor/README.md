@@ -444,54 +444,51 @@ Visual Stage 不用 Element Plus。
 
 Vite 开发服务器不得使用默认端口 `5173`。
 
-项目开发服务器必须使用 `18801-18899` 范围内的端口。该端口在**创建项目框架时**写入 `vite.config.ts`，之后每次启动直接使用配置值，不要重新扫描端口。
+项目开发服务器必须使用 `18801-18899` 范围内的端口。配置里始终把首选端口写成 `18801`；被占用时在该范围内自动顺延，不要把顺延结果写回配置。
 
 ### Port Configuration
 
-端口属于 Vite / Development Environment 配置，在脚手架阶段一次性选定并写入 `vite.config.ts`：
+端口属于 Vite / Development Environment 配置。脚手架阶段写入 `vite.config.ts`，之后保持不变：
 
 ```ts
 server: {
   port: 18801,
-  strictPort: true,
+  strictPort: false,
 }
 ```
 
-选择规则（仅在创建项目框架、或需要修改开发端口时执行）：
+规则：
 
-1. 从 `18801` 开始检查。
-2. 找到第一个当前未被占用的端口。
-3. 将该端口写入 `vite.config.ts` 的 `server.port`。
-4. 设置 `strictPort: true`，禁止 Vite fallback 到 `5173` 或其他范围外端口。
-5. 如果 `18801-18899` 全部被占用，则停止配置，并向用户明确报告端口范围已无可用端口。
+1. `server.port` 固定为 `18801`，表示首选端口，不是「当前机器上碰巧空闲的端口」。
+2. `strictPort` 必须为 `false`，允许 18801 被占用时自动顺延到 `18802`、`18803`…。
+3. 实际可用端口必须落在 `18801-18899`。不得落到 `5173` 或其他范围外端口。
+4. 不要在启动后把顺延得到的端口写回 `vite.config.ts`。下次启动仍从 `18801` 开始尝试。
+5. 如果 `18801-18899` 全部被占用，则停止启动，并向用户明确报告端口范围已无可用端口。
 6. 不得为了获得端口而强制终止、kill 或修改其他正在运行的进程。
 7. 不要在业务代码中硬编码开发服务器端口。
 
-如果需要修改端口，只改 `vite.config.*` 中与开发服务器端口直接相关的配置，不要顺手修改其他构建配置。
+如果需要修改端口策略，只改 `vite.config.*` 中与开发服务器端口直接相关的配置，不要顺手修改其他构建配置。
 
 ### Development Server
 
-启动开发服务器时，使用 `vite.config.ts` 中已配置的端口。不要每次启动都重新寻找端口。
+启动开发服务器时，使用上述配置。Vite 会先尝试 `18801`；占用则自动顺延。
 
-启动后确认实际使用的端口与配置一致。
+启动后确认实际端口：
 
-如果 Vite 或其他开发工具没有使用配置端口，或落到了 `5173` / 范围外端口：
+- 在 `18801-18899` 内：正常使用，并在报告中记录实际端口。
+- 落到 `5173` 或 `18899` 之后：停止当前开发服务器，向用户报告，不要继续使用范围外端口。
 
-1. 停止当前开发服务器。
-2. 检查并修正 `vite.config.ts` 中的 `server.port` / `strictPort`。
-3. 使用符合范围的配置重新启动。
-
-配置端口被占用时，向用户报告，不要改用范围外端口，也不要 kill 其他进程。
+配置端口被占用时，顺延即可，不必先问用户。不要 kill 其他进程。
 
 ### Completion Report
 
-启动开发服务器并完成验证后，在任务报告的 `Tested` 部分明确记录实际端口，例如：
+启动开发服务器并完成验证后，在任务报告的 `Tested` 部分明确记录**实际**端口，例如：
 
 ```text
-Dev Server: http://localhost:18801
+Dev Server: http://localhost:18806  (preferred 18801, occupied)
 ```
 
-实际端口以 `vite.config.ts` 中配置、且本次启动确认的端口为准。
+以本次启动确认的实际端口为准，不要写成配置中的首选端口（除非二者相同）。
 
 
 ## 12.2 Task 执行与 Review 流程
@@ -518,29 +515,159 @@ Review 文件只读：`.codex/reviews/TASK-XXX-review.md`。Cursor 修代码，�
 
 ## 13. 完成任务后的报告
 
+每次完成当前 Task、测试、或根据 Codex Review 完成修复后，Cursor 必须生成结构化最终报告。
+
+报告必须同时满足：
+
+1. 完整报告写入对应的 Markdown 文件（如果当前 Task 有对应文档要求）。
+2. 在当前 Cursor 对话中输出一份简洁、独立、可直接复制的报告摘要。
+3. 报告摘要必须放在当前回复的最后。
+4. 报告之后不得继续输出额外解释、建议、新 Task 或无关日志。
+5. 报告必须使用固定格式，方便用户快速定位并复制。
+6. 不要在最终报告中混入大量过程日志、工具输出或无关分析。
+
+### 13.1 Copy-Friendly Report Block
+
+最终回复必须包含以下固定结构：
+
+```text
+========== TASK REPORT ==========
+
+Task:
+TASK-XXX
+
+Status:
+COMPLETED / CHANGES_REQUIRED / BLOCKED
+
+Summary:
+一句话说明本次完成了什么。
+
+Changed:
+- ...
+
+Added:
+- ...
+
+Removed:
+- ...
+
+Tested:
+- ...
+
+Issues:
+- None
+或
+- ...
+
+Next:
+等待 Codex Review
+
+==================================
+```
+
+### Copy-Friendly Rule
+
+`TASK REPORT` 必须作为当前回复中最后一个独立内容块。
+
+用户应该能够在 Cursor 对话中快速定位最后一个 `TASK REPORT`，并使用 Cursor 的复制功能一次性复制完整报告。
+
+不要在 `TASK REPORT` 后继续输出：
+
+- 额外解释
+- 下一步推测
+- 新 Task
+- 无关日志
+- 其他 Markdown 内容
+
+### Report Content Rules
+
+报告必须准确反映本次 Task 的实际结果。
+
+- `Changed`：列出实际修改的文件或模块。
+- `Added`：列出实际新增的文件或功能。
+- `Removed`：列出实际删除的文件或功能；没有则写 `None`。
+- `Tested`：列出实际执行的验证命令和结果。
+- `Issues`：列出已知问题、阻塞项或文档与代码冲突；没有则写 `None`。
+- `Next`：说明下一步，例如 `等待 Codex Review`。
+- 不得声称执行了没有实际执行的测试。
+- 不得声称功能已经完成而实际没有完成。
+
+### Review 修复报告
+
+如果当前工作是根据：
+
+```text
+.codex/reviews/TASK-XXX-review.md
+```
+
+进行修复，报告必须额外包含：
+
+```text
+Review:
+TASK-XXX-review.md
+
+Review Status:
+FIXED / PARTIALLY_FIXED / BLOCKED
+```
+
+并明确列出：
+
+- 修复了哪些 Review 项目。
+- 哪些 Review 项目仍未解决。
+- 执行了哪些重新验证。
+- 是否需要再次进行 Codex Review。
+
+Cursor 不得修改 Review 原文。
+
+Review 文件保持：
+
+```text
+.codex/reviews/TASK-XXX-review.md
+```
+
+只读。
+
+---
+
+## 插入后的章节关系
+
+你当前 README 已经有：
+
+```text
+12. 开发流程
+├── 12.1 开发服务器端口规则
+└── 12.2 Task 执行与 Review 流程
+
+13. 完成任务后的报告
+
+14. .cursor/ 文档分工
+15. 已知文档冲突
+16. Source of Truth 优先级
+17. 最重要原则
+```
+
+因此：
+
+**不要再新增 `12.3`。**
+
+直接用本文件内容，替换你当前 README 的：
+
+```text
+## 13. 完成任务后的报告
+
 ### Changed
-
-修改了什么。
-
+...
 ### Added
-
-增加了什么。
-
+...
 ### Removed
-
-删除了什么。
-
+...
 ### Tested
-
-运行了什么命令 / 看到了什么结果。
-
+...
 ### Issues
-
-已知问题，以及文档与代码冲突。
-
+...
 ### Next
-
-建议下一步。不要直接开始下一个 Task。
+...
+```
 
 ---
 
