@@ -2,9 +2,9 @@ import {
   Color,
   FrontSide,
   Mesh,
+  PlaneGeometry,
   Scene,
   ShaderMaterial,
-  SphereGeometry,
 } from 'three'
 import type { AudioData } from '@/audio'
 import { disposeObject3D } from '../dispose'
@@ -22,14 +22,14 @@ const CONTROLS: ControlDefinition[] = [
     key: 'rimColor',
     label: 'Rim Color',
     type: 'color',
-    defaultValue: '#d946ef',
+    defaultValue: '#ff4ddf',
     group: 'appearance',
   },
   {
     key: 'coreColor',
     label: 'Core Color',
     type: 'color',
-    defaultValue: '#c4b5fd',
+    defaultValue: '#c7a6f6',
     group: 'appearance',
   },
   {
@@ -107,7 +107,7 @@ const CONTROLS: ControlDefinition[] = [
 export const glassOrbDefinition: EffectDefinition = {
   id: 'glass-orb',
   name: 'GlassOrb',
-  description: 'Frosted glass AI energy orb',
+  description: 'Soft layered voice orb',
   controls: CONTROLS,
   preferredStageStyle: 'light',
 }
@@ -134,10 +134,10 @@ export class GlassOrb implements VisualEffect {
   readonly name = glassOrbDefinition.name
   readonly scene = new Scene()
 
-  private readonly rimColor = new Color('#d946ef')
-  private readonly coreColor = new Color('#c4b5fd')
-  private readonly highlightColor = new Color('#fbcfe8')
-  private mesh: Mesh<SphereGeometry, ShaderMaterial> | null = null
+  private readonly rimColor = new Color('#ff4ddf')
+  private readonly coreColor = new Color('#c7a6f6')
+  private readonly highlightColor = new Color('#fff5fb')
+  private mesh: Mesh<PlaneGeometry, ShaderMaterial> | null = null
   private material: ShaderMaterial | null = null
   private elapsed = 0
   private appliedRim = ''
@@ -167,9 +167,10 @@ export class GlassOrb implements VisualEffect {
       transparent: true,
       depthWrite: false,
       side: FrontSide,
+      toneMapped: false,
     })
 
-    const mesh = new Mesh(new SphereGeometry(1, 96, 96), material)
+    const mesh = new Mesh(new PlaneGeometry(3.6, 3.6), material)
     this.scene.add(mesh)
     this.mesh = mesh
     this.material = material
@@ -202,9 +203,9 @@ export class GlassOrb implements VisualEffect {
 
     this.elapsed += deltaTime * 0.001 * idleSpeed
 
-    const audioScale = 1 + volume * volumeSensitivity * 0.08
-    mesh.scale.setScalar(audioScale)
-    mesh.rotation.y += deltaTime * 0.0001 * idleSpeed
+    const breathe = 1 + Math.sin(this.elapsed * 1.65) * (0.018 + volume * 0.035)
+    const audioScale = 1 + volume * volumeSensitivity * 0.06
+    mesh.scale.setScalar(breathe * audioScale)
 
     uniforms.uTime.value = this.elapsed
     uniforms.uVolume.value = volume

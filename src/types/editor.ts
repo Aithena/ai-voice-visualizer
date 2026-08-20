@@ -15,7 +15,7 @@ export const EFFECT_OPTIONS: readonly EffectOption[] = [
   {
     id: 'glass-orb',
     name: 'GlassOrb',
-    description: 'Frosted glass energy',
+    description: 'Soft layered voice orb',
   },
   {
     id: 'placeholder-orb',
